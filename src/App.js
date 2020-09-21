@@ -16,15 +16,29 @@ const Hero = ({ collapsed, collapseHero }) => {
 }
 
 const SelectVocabCate = ({ vocabCate, handleVocabCateChange }) => {
+
+    const bookmarked = localStorage.getItem("bookmarked") && localStorage.getItem("bookmarked").length > 0
+
     return (
         <select className="button" name="vocab" value={vocabCate} onChange={handleVocabCateChange}>
-            <option value="medical">medical</option>
-            <option value="legal">legal</option>
-            <option value="education">education</option>
-            <option value="immigration">immigration</option>
-            <option value="welfare">welfare</option>
-            <option value="business">business</option>
+            <option value="medical">医疗</option>
+            <option value="legal">法律</option>
+            <option value="education">教育</option>
+            <option value="immigration">移民</option>
+            <option value="welfare">Centrelink/社区服务</option>
+            <option value="business">商业/金融/保险</option>
         </select>
+    )
+}
+
+const BookmarkedCheckbox = ({ bookmarked, toggleBookmarked }) => {
+    return (
+        <label className="checkbox">
+            仅查看已收藏
+            
+            <input className={bookmarked && "checked"} type="checkbox" checked={bookmarked} onChange={toggleBookmarked} name="bookmark" />
+            <span className="checkmark" ></span>
+        </label>
     )
 }
 
@@ -32,6 +46,7 @@ const Workspace = ({ expanded, collapseHero }) => {
     const [vocabCate, _setVocabCate] = useState("medical")
     const [vocabStore, _setVocabStore] = useState({})
     const [vocabIndex, _setVocabIndex] = useState(0)
+    const [bookmarked, setBookmarked] = useState(false)
 
     const vocabCateRef = useRef(vocabCate)
     const vocabStoreRef = useRef(vocabStore)
@@ -46,6 +61,11 @@ const Workspace = ({ expanded, collapseHero }) => {
     const setVocabStore = autoRefSetter(vocabStoreRef, _setVocabStore)
     const setVocabIndex = autoRefSetter(vocabIndexRef, _setVocabIndex)
 
+    const selectCurrentWord = (e) => {
+        console.log(e.target)
+        // e.target.select()
+    }
+
     const handleVocabCateChange = (e) => {
         const newCate = e.target.value
         if (!localStorage.getItem(newCate)) {
@@ -57,6 +77,10 @@ const Workspace = ({ expanded, collapseHero }) => {
         setVocabIndex(Number(localStorage.getItem(newCate)))
         recordProgress()
         collapseHero()
+    }
+
+    const toggleBookmarked = (e) => {
+        setBookmarked(e.target.checked)
     }
 
     const nextWord = () => {
@@ -115,16 +139,20 @@ const Workspace = ({ expanded, collapseHero }) => {
     return (
         <div className={`workspace ${expanded && "expanded"}`}>
             <div className="workspace-status">
-                <p>选择词库 👉 <SelectVocabCate vocabCate={vocabCate} handleVocabCateChange={handleVocabCateChange} /></p>
+                <p>
+                    选择词库 👉 
+                    <SelectVocabCate vocabCate={vocabCate} handleVocabCateChange={handleVocabCateChange} />
+                    {/* <BookmarkedCheckbox bookmarked={bookmarked} toggleBookmarked={toggleBookmarked} /> */}
+                </p>
             </div>
             <div className="workspace-word">
-                <p>{vocabStore[vocabCate] && vocabStore[vocabCate][vocabIndex]}</p>
+                <p onClick={selectCurrentWord}>{vocabStore[vocabCate] && vocabStore[vocabCate][vocabIndex]}</p>
             </div>
             <div className="workspace-control">
                 <div onClick={prevWord} className="control control-left"></div><p>{vocabIndex + 1} / {vocabStore[vocabCate] && vocabStore[vocabCate].length}</p>
                 <div onClick={nextWord} className="control control-right"></div>
             </div>
-        </div>
+        </div >
     )
 }
 
