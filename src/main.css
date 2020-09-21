@@ -160,7 +160,7 @@ button {
     background: #888;
     box-shadow: 5px 5px 0px #555;
     outline: none;
-    border-radius: none;
+    border-radius: 0;
     -webkit-appearance: none;
 
     transition: 100ms ease;
