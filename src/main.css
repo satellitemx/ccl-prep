@@ -104,6 +104,10 @@ button {
         position: relative;
         text-align: center;
         font-size: 36pt;
+        cursor: pointer;
+    }
+    .workspace-word p:active {
+        transform: scale(0.98)
     }
 
 .workspace-control {
