@@ -17,8 +17,6 @@ const Hero = ({ collapsed, collapseHero }) => {
 
 const SelectVocabCate = ({ vocabCate, handleVocabCateChange }) => {
 
-    const bookmarked = localStorage.getItem("bookmarked") && localStorage.getItem("bookmarked").length > 0
-
     return (
         <select className="button" name="vocab" value={vocabCate} onChange={handleVocabCateChange}>
             <option value="medical">医疗</option>
@@ -31,12 +29,16 @@ const SelectVocabCate = ({ vocabCate, handleVocabCateChange }) => {
     )
 }
 
-const BookmarkedCheckbox = ({ bookmarked, toggleBookmarked }) => {
+const BookmarkedOnlyCheckbox = ({ bookmarkedOnly, toggleBookmarkedOnly }) => {
     return (
         <label className="checkbox">
             仅查看已收藏
-            
-            <input className={bookmarked && "checked"} type="checkbox" checked={bookmarked} onChange={toggleBookmarked} name="bookmark" />
+            <input
+                className={bookmarkedOnly ? "checked" : ""}
+                type="checkbox"
+                checked={bookmarkedOnly}
+                onChange={toggleBookmarkedOnly}
+                name="bookmark" />
             <span className="checkmark" ></span>
         </label>
     )
@@ -46,7 +48,8 @@ const Workspace = ({ expanded, collapseHero }) => {
     const [vocabCate, _setVocabCate] = useState("medical")
     const [vocabStore, _setVocabStore] = useState({})
     const [vocabIndex, _setVocabIndex] = useState(0)
-    const [bookmarked, setBookmarked] = useState(false)
+    const [bookmarkedOnly, setBookmarkedOnly] = useState(false)
+    const [bookmarkedStore, setBookmarkedStore] = useState({})
 
     const vocabCateRef = useRef(vocabCate)
     const vocabStoreRef = useRef(vocabStore)
@@ -61,9 +64,16 @@ const Workspace = ({ expanded, collapseHero }) => {
     const setVocabStore = autoRefSetter(vocabStoreRef, _setVocabStore)
     const setVocabIndex = autoRefSetter(vocabIndexRef, _setVocabIndex)
 
-    const selectCurrentWord = (e) => {
-        console.log(e.target)
-        // e.target.select()
+    const bookmarkCurrentWord = () => {
+        if (bookmarkedOnly) return
+        if (bookmarkedStore[vocabCate].indexOf(vocabIndex) === -1) {
+            setBookmarkedStore({
+                ...bookmarkedStore,
+                [vocabCate]: [...bookmarkedStore[vocabCate], vocabIndex]
+            })
+            console.log(bookmarkedStore)
+            recordBookmark()
+        }
     }
 
     const handleVocabCateChange = (e) => {
@@ -74,17 +84,17 @@ const Workspace = ({ expanded, collapseHero }) => {
             recordProgress()
         }
         setVocabCate(newCate)
-        setVocabIndex(Number(localStorage.getItem(newCate)))
+        if (bookmarkedOnly) {
+            setVocabIndex(0)
+        } else {
+            setVocabIndex(parseInt(localStorage.getItem(newCate)))
+        }
         recordProgress()
         collapseHero()
     }
 
-    const toggleBookmarked = (e) => {
-        setBookmarked(e.target.checked)
-    }
-
     const nextWord = () => {
-        if (vocabIndexRef.current < vocabStoreRef.current[vocabCateRef.current].length - 1) {
+        if (vocabIndexRef.current < displayedWords.length - 1) {
             setVocabIndex(vocabIndexRef.current + 1)
         }
         recordProgress()
@@ -98,11 +108,26 @@ const Workspace = ({ expanded, collapseHero }) => {
     }
 
     const recordProgress = () => {
+        if (bookmarkedOnly) return
         localStorage.setItem("current", JSON.stringify({
             category: vocabCateRef.current,
             index: vocabIndexRef.current
         }))
         localStorage.setItem(vocabCateRef.current, vocabIndexRef.current)
+    }
+
+    const toggleBookmarkedOnly = () => {
+        if (bookmarkedOnly) {
+            setVocabIndex(parseInt(localStorage.getItem(vocabCate)))
+        } else {
+            setVocabIndex(0)
+        }
+        setBookmarkedOnly(!bookmarkedOnly)
+    }
+
+    const recordBookmark = () => {
+        if (bookmarkedOnly) return
+        localStorage.setItem("bookmarked", JSON.stringify(bookmarkedStore))
     }
 
     const keySwitcher = (e) => {
@@ -127,6 +152,7 @@ const Workspace = ({ expanded, collapseHero }) => {
 
     useEffect(() => {
         const currentProgress = localStorage.getItem("current")
+        const currentBookmarkedStore = localStorage.getItem("bookmarked")
         if (currentProgress) {
             const parsed = JSON.parse(currentProgress)
             setVocabCate(parsed.category)
@@ -134,22 +160,43 @@ const Workspace = ({ expanded, collapseHero }) => {
         } else {
             recordProgress()
         }
+        if (currentBookmarkedStore) {
+            const parsed = JSON.parse(currentBookmarkedStore)
+            setBookmarkedStore(parsed)
+        } else {
+            setBookmarkedStore(Object.keys(vocabStore).reduce((cum, cur) => {
+                return {
+                    ...cum,
+                    [cur]: []
+                }
+            }, {}))
+        }
     }, [vocabStore])
+
+    let displayedWords = bookmarkedOnly
+        ? bookmarkedStore[vocabCate].map(index => vocabStore[vocabCate][index])
+        : vocabStore[vocabCate] ? vocabStore[vocabCate].map(word => word) : []
+
+    if (displayedWords.length === 0) {
+        displayedWords.push("None")
+    }
 
     return (
         <div className={`workspace ${expanded && "expanded"}`}>
             <div className="workspace-status">
                 <p>
-                    选择词库 👉 
+                    选择词库 👉
                     <SelectVocabCate vocabCate={vocabCate} handleVocabCateChange={handleVocabCateChange} />
-                    {/* <BookmarkedCheckbox bookmarked={bookmarked} toggleBookmarked={toggleBookmarked} /> */}
+                    <BookmarkedOnlyCheckbox bookmarkedOnly={bookmarkedOnly} toggleBookmarkedOnly={toggleBookmarkedOnly} />
                 </p>
             </div>
             <div className="workspace-word">
-                <p onClick={selectCurrentWord}>{vocabStore[vocabCate] && vocabStore[vocabCate][vocabIndex]}</p>
+                <p onClick={bookmarkCurrentWord}>
+                    {displayedWords[vocabIndex]}
+                </p>
             </div>
             <div className="workspace-control">
-                <div onClick={prevWord} className="control control-left"></div><p>{vocabIndex + 1} / {vocabStore[vocabCate] && vocabStore[vocabCate].length}</p>
+                <div onClick={prevWord} className="control control-left"></div><p>{vocabIndex + 1} / {displayedWords.length}</p>
                 <div onClick={nextWord} className="control control-right"></div>
             </div>
         </div >
