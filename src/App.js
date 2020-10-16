@@ -68,7 +68,6 @@ const Workspace = ({ expanded, collapseHero }) => {
     const toggleCurrentWordBookmarked = () => {
         const currentWord = displayedWords[vocabIndex]
         const origIndex = vocabStore[vocabCate].indexOf(currentWord)
-        console.log(`word ${currentWord} | origIndex ${origIndex}`)
         if (bookmarkedStore[vocabCate].indexOf(vocabIndex) === -1 && !bookmarkedOnly) {
             setBookmarkedStore({
                 ...bookmarkedStore,
