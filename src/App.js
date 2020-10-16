@@ -8,7 +8,7 @@ const Hero = ({ collapsed, collapseHero }) => {
                 <p className="hero-em">免费在线</p>
                 <p className="hero-title">CCL VOCAB PRACTICE</p>
                 <p>时间宝贵，本服务无需注册。点击下方按钮即可开始练习。</p>
-                <p><button onClick={collapseHero} className="button">立刻开始 👇</button></p>
+                <p><button onClick={collapseHero} className="button">立刻开始 <span role="img" aria-label="Arrow Pointing Down">👇</span></button></p>
             </div>
             <div className="hero-image"></div>
         </div>
@@ -50,6 +50,7 @@ const Workspace = ({ expanded, collapseHero }) => {
     const [vocabIndex, _setVocabIndex] = useState(0)
     const [bookmarkedOnly, setBookmarkedOnly] = useState(false)
     const [bookmarkedStore, setBookmarkedStore] = useState({})
+    const [wordHovered, setWordHovered] = useState(false)
 
     const vocabCateRef = useRef(vocabCate)
     const vocabStoreRef = useRef(vocabStore)
@@ -64,16 +65,22 @@ const Workspace = ({ expanded, collapseHero }) => {
     const setVocabStore = autoRefSetter(vocabStoreRef, _setVocabStore)
     const setVocabIndex = autoRefSetter(vocabIndexRef, _setVocabIndex)
 
-    const bookmarkCurrentWord = () => {
-        if (bookmarkedOnly) return
-        if (bookmarkedStore[vocabCate].indexOf(vocabIndex) === -1) {
+    const toggleCurrentWordBookmarked = () => {
+        const currentWord = displayedWords[vocabIndex]
+        const origIndex = vocabStore[vocabCate].indexOf(currentWord)
+        console.log(`word ${currentWord} | origIndex ${origIndex}`)
+        if (bookmarkedStore[vocabCate].indexOf(vocabIndex) === -1 && !bookmarkedOnly) {
             setBookmarkedStore({
                 ...bookmarkedStore,
-                [vocabCate]: [...bookmarkedStore[vocabCate], vocabIndex]
+                [vocabCate]: [...bookmarkedStore[vocabCate], origIndex]
             })
-            console.log(bookmarkedStore)
-            recordBookmark()
+        } else {
+            setBookmarkedStore({
+                ...bookmarkedStore,
+                [vocabCate]: [...bookmarkedStore[vocabCate]].filter(index => index !== origIndex)
+            })
         }
+        recordBookmark()
     }
 
     const handleVocabCateChange = (e) => {
@@ -123,6 +130,22 @@ const Workspace = ({ expanded, collapseHero }) => {
             setVocabIndex(0)
         }
         setBookmarkedOnly(!bookmarkedOnly)
+    }
+
+    const toggleWordHovered = (e) => {
+        switch(e.type) {
+            case "mouseover": setWordHovered(true); break
+            case "mouseout": setWordHovered(false); break
+            default: return
+        }
+    }
+
+    const checkIfBookmarked = () => {
+        if (bookmarkedOnly) return true
+        if (bookmarkedStore[vocabCate]) {
+            return bookmarkedStore[vocabCate].indexOf(vocabIndex) !== -1
+        }
+        return false
     }
 
     const recordBookmark = () => {
@@ -185,15 +208,16 @@ const Workspace = ({ expanded, collapseHero }) => {
         <div className={`workspace ${expanded && "expanded"}`}>
             <div className="workspace-status">
                 <p>
-                    选择词库 👉
+                    选择词库 <span role="img" aria-label="Arrow Pointing Right">👉</span>
                     <SelectVocabCate vocabCate={vocabCate} handleVocabCateChange={handleVocabCateChange} />
                     <BookmarkedOnlyCheckbox bookmarkedOnly={bookmarkedOnly} toggleBookmarkedOnly={toggleBookmarkedOnly} />
                 </p>
             </div>
-            <div className="workspace-word">
-                <p onClick={bookmarkCurrentWord}>
+            <div className="workspace-word" onClick={toggleCurrentWordBookmarked} onMouseOver={toggleWordHovered} onMouseOut={toggleWordHovered}>
+                <p className={checkIfBookmarked() ? "bookmarked" : ""}>
                     {displayedWords[vocabIndex]}
                 </p>
+    <button className="button">{checkIfBookmarked() ? "取消收藏" : "收藏"}</button>
             </div>
             <div className="workspace-control">
                 <div onClick={prevWord} className="control control-left"></div><p>{vocabIndex + 1} / {displayedWords.length}</p>
