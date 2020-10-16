@@ -201,7 +201,7 @@ const Workspace = ({ expanded, collapseHero }) => {
         : vocabStore[vocabCate] ? vocabStore[vocabCate].map(word => word) : []
 
     if (displayedWords.length === 0) {
-        displayedWords.push("None")
+        displayedWords.push("收藏中空空如也")
     }
 
     return (
